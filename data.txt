@@ -1,0 +1,13 @@
+# vim: ts=8 sts=8 sw=8 noet
+안녕하세요		annyeonghaseyo		hello
+감사합니다		gamsahapnida		thank you
+네			ne			yes
+아니요			aniyo			no
+물			mul			water
+가방			gabang			bag
+의자			uija			chair
+한국어			hangugeo		Korean
+사무실			samusil			office
+학교			hakgyo			school
+학생			haksaeng		student
+죄송합니다		joesonghapnida		I'm sorry/I apologize
