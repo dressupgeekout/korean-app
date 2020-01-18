@@ -1,4 +1,7 @@
-local VOCAB = require("vocab")
+local serpent = require("serpent")
+local UnresolvedVocab = require("vocab")
+
+VOCAB = {}
 
 DEBUG = true
 
@@ -14,13 +17,44 @@ Options = {
 	LevelRange = {{1, 1}, {1, 100}},
 }
 
---[[Returns a random word-tuple from the data list.]]
---XXX needs to respect the LevelRange
-local function RandomEntry()
-	local word = VOCAB[love.math.random(#VOCAB)]
-	if DEBUG then
-		print(word.k, word.r, word.e)
+local function WordScore(entry)
+	return entry.level*100 + entry.lesson
+end
+
+--[[Creates a new table where vocab entires are identified by their
+"difficulty".]]
+local function ResolveVocab()
+	for _, entry in ipairs(UnresolvedVocab) do
+		local score = WordScore(entry)
+		VOCAB[score] = VOCAB[score] or {}
+		table.insert(VOCAB[score], entry)
 	end
+end
+
+--[[Returns a random word-tuple from the data list while also respecting the
+difficulty range.]]
+local function RandomEntry()
+	local min_level, min_lesson = unpack(Options.LevelRange[1])
+	local max_level, max_lesson = unpack(Options.LevelRange[2])
+	local min_score = WordScore({level=min_level, lesson=min_lesson})
+	local max_score = WordScore({level=max_level, lesson=max_lesson})
+
+	print(serpent.line({min_score, max_score}))
+
+	local score = love.math.random(min_score, max_score)
+
+	--[[If the score does not exist, then try one lower until we get one that
+	does exist.]]
+	while (not VOCAB[score]) do
+		score = score - 1
+	end
+
+	local word = VOCAB[score][love.math.random(#VOCAB[score])]
+
+	if DEBUG then
+		print("->", word.k, word.r, word.e)
+	end
+
 	return word
 end
 
@@ -116,6 +150,9 @@ end
 function love.load()
 	love.window.setMode(1280, 720) -- XXX best way to set this for mobile?
 	love.window.setTitle("한극어")
+
+	ResolveVocab()
+	print(serpent.line(VOCAB))
 
 	load_fonts()
 
