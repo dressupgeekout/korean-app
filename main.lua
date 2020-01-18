@@ -135,6 +135,15 @@ function love.keypressed(key, scancode)
 	if key == "f" then
 		next_korean_font()
 	end
+
+	if key == "p" then
+		local path = "audio/"..(current_word.r).."-fast.ogg"
+		print(path)
+		if love.filesystem.getInfo(path) then
+			print("playing " .. path)
+			love.audio.newSource(path, "static"):play()
+		end
+	end
 end
 
 function love.keyreleased(key, scancode)

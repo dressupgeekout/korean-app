@@ -14,3 +14,4 @@
 1	1	학생			haksaeng		student
 1	1	죄송합니다		joesonghapnida		I'm sorry/I apologize
 1	1	진짜			jinjja			real
+1	1	커피			keopi			coffee
