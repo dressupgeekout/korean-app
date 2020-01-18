@@ -1,0 +1,46 @@
+# vim: ts=8 sts=8 sw=8 noet
+# level, lesson, Korean, romaja, English
+# --------------------------------------------------------------------------
+1	0	한국어			hangugeo		Korean
+1	0	의자			uija			chair
+1	0	진짜			jinjja			real
+##
+1	1	안녕하세요		annyeonghaseyo		hello
+1	1	감사합니다		gamsahapnida		thank you
+##
+1	2	네			ne			yes
+1	2	아니요			aniyo			no
+1	2	맞아요			majayo			that's right
+##
+1	3	안녕히 가세요		annyeonghi gaseyo	goodbye (you're leaving, I'm staying)
+1	3	안녕히 계세요		annyeonghi gyeseyo	goodbye (I'm leaving, you're staying)
+##
+1	4	죄송합니다		joesonghapnida		I'm sorry/I apologize
+1	4	죄기요			joegiyo			hey!/over there
+##
+1	5	물			mul			water
+1	5	가방			gabang			bag
+1	5	사무실			samusil			office
+1	5	학교			hakgyo			school
+1	5	학생			haksaeng		student
+1	5	(XXX mwo)		mwo			what
+1	5	저			joe			me/I/over there
+1	5	이거			igeo			this
+##
+1	6	책			chaeg			book
+1	6	것			geot			thing
+1	6	카메라			kamera			camera
+1	6	커피			keopi			coffee
+1	6	사전			sajeon			dictionary
+1	6	마이크			maikeu			microphone
+1	6	한드폰			haendeupon		cell phone
+##
+1	8	컴퓨터			keompyuteo		computer
+1	8	아이스크림		aiseukeurim		ice cream
+1	8	호텔			hotel			hotel
+1	8	택시			taegsi			taxi
+1	8	버스			beoseu			bus
+1	8	피자			pija			pizza
+1	8	테이블			teibeul			table
+1	8	레스토랑		reseutorang		restaurant
+1	8	사람			saram			person

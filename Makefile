@@ -1,2 +1,2 @@
-data.lua: data.txt make_data.awk
-	awk -f make_data.awk $< > $@
+vocab.lua: vocab.txt make_vocab.awk
+	awk -f make_vocab.awk $< > $@

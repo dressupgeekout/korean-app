@@ -1,4 +1,4 @@
-local vocab = require("data")
+local VOCAB = require("vocab")
 
 DEBUG = true
 
@@ -10,12 +10,14 @@ SPEECH_FAST = "fast"
 SPEECH_SLOW = "slow"
 
 Options = {
-	SpeechSpeed = SPEECH_FAST,
+	SlowSpeech = false,
+	LevelRange = {{1, 1}, {1, 100}},
 }
 
 --[[Returns a random word-tuple from the data list.]]
+--XXX needs to respect the LevelRange
 local function RandomEntry()
-	local word = vocab[love.math.random(#vocab)]
+	local word = VOCAB[love.math.random(#VOCAB)]
 	if DEBUG then
 		print(word.k, word.r, word.e)
 	end
@@ -50,6 +52,7 @@ have easy access to their names.]]
 local function AddKoreanFont(name, ...)
 	if not korean_fonts then korean_fonts = {} end
 	if not korean_font_names then korean_font_names = {} end
+	print(string.format("ADDING FONT %q", name))
 	table.insert(korean_font_names, name)
 	korean_fonts[name] = love.graphics.newFont(...)
 end
@@ -93,6 +96,21 @@ local function SetQuizMode(from, to)
 		return false
 	end
 	QuizMode = {From=from, To=to}
+end
+
+local function SpeechSpeed()
+	if Options.SlowSpeech then
+		return SPEECH_SLOW
+	else
+		return SPEECH_FAST
+	end
+end
+
+local function ToggleSpeechSpeed()
+	local old = SpeechSpeed()
+	Options.SlowSpeech = not Options.SlowSpeech
+	local new = SpeechSpeed()
+	print(string.format("SPEECH SPEED %s -> %s", old, new))
 end
 
 function love.load()
@@ -154,12 +172,16 @@ function love.keypressed(key, scancode)
 	end
 
 	if key == "p" then
-		local path = "audio/"..(current_word.r).."-fast.ogg"
+		local path = "audio/"..(current_word.r).."-"..SpeechSpeed()..".ogg"
 		print(path)
 		if love.filesystem.getInfo(path) then
-			print("playing " .. path)
+			print("PLAYING " .. path)
 			love.audio.newSource(path, "static"):play()
 		end
+	end
+
+	if key == "s" then
+		ToggleSpeechSpeed()
 	end
 end
 
@@ -173,7 +195,7 @@ function love.keyreleased(key, scancode)
 	end
 end
 
-local function draw_menu()
+local function DrawMenu()
 	if not menu_canvas then
 		menu_canvas = love.graphics.newCanvas(love.graphics.getWidth(), love.graphics.getHeight()/2)
 		menu_canvas:renderTo(function()
@@ -183,7 +205,7 @@ local function draw_menu()
 			love.graphics.setFont(menu_font)
 			love.graphics.setColor(1, 1, 1, 1)
 			love.graphics.print("FONT: "..korean_font_names[current_korean_font_index], 15, menu_font:getHeight())
-			love.graphics.print("SPEED: " ..Options.SpeechSpeed, 15, menu_font:getHeight()*2.5)
+			love.graphics.print("SPEED: " ..SpeechSpeed(), 15, menu_font:getHeight()*2.5)
 		end)
 	end
 
@@ -201,6 +223,6 @@ function love.draw()
 	)
 
 	if show_menu then
-		draw_menu()
+		DrawMenu()
 	end
 end
