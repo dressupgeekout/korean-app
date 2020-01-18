@@ -6,10 +6,12 @@ BEGIN {
 }
 
 /^[^#]/ {
-  korean = $1
-  romaja = $2
-  english = $3
-  printf "{k=\"%s\", r=\"%s\", e=\"%s\"},\n", korean, romaja, english
+  level = $1
+  lesson = $2
+  korean = $3
+  romaja = $4
+  english = $5
+  printf "{level=%d, lesson=%d, k=\"%s\", r=\"%s\", e=\"%s\"},\n", level, lesson, korean, romaja, english
 }
 
 END {

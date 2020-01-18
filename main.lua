@@ -6,6 +6,7 @@ MODE_KOREAN = "k"
 MODE_ROMAJA = "r"
 MODE_ENGLISH = "e"
 
+--[[Returns a random word-tuple from the data list.]]
 local function random_entry()
 	local word = vocab[love.math.random(#vocab)]
 	if DEBUG then
@@ -14,10 +15,13 @@ local function random_entry()
 	return word
 end
 
+--[[Returns a LOVE Font object.]]
 local function current_korean_font()
 	return korean_fonts[korean_font_names[current_korean_font_index]]
 end
 
+--[[Figures out which font should be used for drawing text based on the current
+mode, and then sets that font.]]
 local function set_font()
 	if current_mode == MODE_KOREAN then
 		current_font = current_korean_font()
@@ -25,6 +29,7 @@ local function set_font()
 		current_font = english_font
 	end
 	love.graphics.setFont(current_font)
+	menu_canvas = nil -- reset menu
 end
 
 --[[Updates two tables: a lookup table from fontname->font, but also a plain
@@ -49,8 +54,10 @@ local function load_fonts()
 	add_korean_font("PC Myeongjo", "fonts/PCmyoungjo.ttf", 84)
 	add_korean_font("Pilgiche", "fonts/Pilgiche.ttf", 84)
 	english_font = love.graphics.newFont(84)
+	menu_font = love.graphics.newFont(18)
 end
 
+--[[Correctly wraps around the end of the list for you.]]
 local function next_korean_font()
 	if current_korean_font_index == #korean_font_names then
 		current_korean_font_index = 1
@@ -59,6 +66,7 @@ local function next_korean_font()
 	end
 end
 
+--[[Correctly wraps around the end of the list for you.]]
 local function previous_korean_font()
 	if current_korean_font_index == 1 then
 		current_korean_font_index = #korean_font_names
@@ -75,15 +83,43 @@ function love.load()
 
 	quiz_mode = {
 		from = MODE_KOREAN,
-		to = MODE_ROMAJA,
+		to = MODE_ENGLISH,
 	}
 
 	current_word = random_entry()
 	current_mode = quiz_mode.from
 	current_korean_font_index = 1
+
+	show_menu = false
+end
+
+--[['region' is a list: {x, y, width, height}]]
+local function is_inside_touch_region(x, y, region)
+	local region_x, region_y, region_width, region_height = unpack(region)
+	return x >= region_x and x <= region_x+region_width and y >= region_y and y <= region_y+region_height
+end
+
+function love.mousepressed(x, y, button, istouch, npresses)
+	if button == 1 then
+		if is_inside_touch_region(x, y, {love.graphics.getWidth()*2/3, 0, love.graphics.getWidth()/3, love.graphics.getHeight()}) then
+			random_entry()
+		else
+			current_mode = quiz_mode.to
+		end
+	end
+end
+
+function love.mousereleased(x, y, button, istouch, npresses)
+	if button == 1 then
+		current_mode = quiz_mode.from
+	end
 end
 
 function love.keypressed(key, scancode)
+	if key == "escape" then
+		love.event.quit()
+	end
+
 	if key == "return" then
 		current_word = random_entry()
 	end
@@ -111,6 +147,22 @@ function love.keyreleased(key, scancode)
 	end
 end
 
+local function draw_menu()
+	if not menu_canvas then
+		menu_canvas = love.graphics.newCanvas(love.graphics.getWidth(), love.graphics.getHeight()/2)
+		menu_canvas:renderTo(function()
+			love.graphics.setColor(0.5, 0, 0, 0.75)
+			love.graphics.rectangle("fill", 0, 0, menu_canvas:getWidth(), menu_canvas:getHeight())
+
+			love.graphics.setFont(menu_font)
+			love.graphics.setColor(1, 1, 1, 1)
+			love.graphics.print("FONT: "..korean_font_names[current_korean_font_index], 15, 15)
+		end)
+	end
+
+	love.graphics.draw(menu_canvas, 0, love.graphics.getHeight()/4)
+end
+
 function love.draw()
 	set_font()
 	love.graphics.setColor(1, 1, 1, 1)
@@ -120,4 +172,8 @@ function love.draw()
 		love.graphics.getWidth(),
 		"center"
 	)
+
+	if show_menu then
+		draw_menu()
+	end
 end
