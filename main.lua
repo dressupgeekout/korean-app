@@ -6,8 +6,15 @@ MODE_KOREAN = "k"
 MODE_ROMAJA = "r"
 MODE_ENGLISH = "e"
 
+SPEECH_FAST = "fast"
+SPEECH_SLOW = "slow"
+
+Options = {
+	SpeechSpeed = SPEECH_FAST,
+}
+
 --[[Returns a random word-tuple from the data list.]]
-local function random_entry()
+local function RandomEntry()
 	local word = vocab[love.math.random(#vocab)]
 	if DEBUG then
 		print(word.k, word.r, word.e)
@@ -20,6 +27,11 @@ local function current_korean_font()
 	return korean_fonts[korean_font_names[current_korean_font_index]]
 end
 
+--[[Force the menu-canvas to be recomputed.]]
+local function ResetMenuCanvas()
+	menu_canvas = nil 
+end
+
 --[[Figures out which font should be used for drawing text based on the current
 mode, and then sets that font.]]
 local function set_font()
@@ -29,13 +41,13 @@ local function set_font()
 		current_font = english_font
 	end
 	love.graphics.setFont(current_font)
-	menu_canvas = nil -- reset menu
+	ResetMenuCanvas()
 end
 
 --[[Updates two tables: a lookup table from fontname->font, but also a plain
 list of font names. This allows us to step through the list of fonts and also
 have easy access to their names.]]
-local function add_korean_font(name, ...)
+local function AddKoreanFont(name, ...)
 	if not korean_fonts then korean_fonts = {} end
 	if not korean_font_names then korean_font_names = {} end
 	table.insert(korean_font_names, name)
@@ -43,16 +55,16 @@ local function add_korean_font(name, ...)
 end
 
 local function load_fonts()
-	add_korean_font("Apple Gothic", "fonts/AppleGothic.ttf", 84)
-	add_korean_font("Apple Myungjo", "fonts/AppleMyungjo.ttf", 84)
-	add_korean_font("Apple SD Gothic Neo", "fonts/AppleSDGothicNeo.ttc", 84)
-	add_korean_font("Gunseouche", "fonts/Gungseouche.ttf", 84)
-	add_korean_font("Headline A", "fonts/HeadlineA.ttf", 84)
-	add_korean_font("Nanum Gothic", "fonts/NanumGothic.ttc", 84)
-	add_korean_font("Nanum Myeongjo", "fonts/NanumMyeongjo.ttc", 84)
-	add_korean_font("Nanum Script", "fonts/NanumScript.ttc", 84)
-	add_korean_font("PC Myeongjo", "fonts/PCmyoungjo.ttf", 84)
-	add_korean_font("Pilgiche", "fonts/Pilgiche.ttf", 84)
+	AddKoreanFont("Apple Gothic", "fonts/AppleGothic.ttf", 84)
+	AddKoreanFont("Apple Myungjo", "fonts/AppleMyungjo.ttf", 84)
+	AddKoreanFont("Apple SD Gothic Neo", "fonts/AppleSDGothicNeo.ttc", 84)
+	AddKoreanFont("Gunseouche", "fonts/Gungseouche.ttf", 84)
+	AddKoreanFont("Headline A", "fonts/HeadlineA.ttf", 84)
+	AddKoreanFont("Nanum Gothic", "fonts/NanumGothic.ttc", 84)
+	AddKoreanFont("Nanum Myeongjo", "fonts/NanumMyeongjo.ttc", 84)
+	AddKoreanFont("Nanum Script", "fonts/NanumScript.ttc", 84)
+	AddKoreanFont("PC Myeongjo", "fonts/PCmyoungjo.ttf", 84)
+	AddKoreanFont("Pilgiche", "fonts/Pilgiche.ttf", 84)
 	english_font = love.graphics.newFont(84)
 	menu_font = love.graphics.newFont(18)
 end
@@ -75,19 +87,24 @@ local function previous_korean_font()
 	end
 end
 
+local function SetQuizMode(from, to)
+	if from == to then
+		print(string.format("Invalid quiz mode: %q -> %q", from, to))
+		return false
+	end
+	QuizMode = {From=from, To=to}
+end
+
 function love.load()
-	love.window.setMode(1280, 720)
+	love.window.setMode(1280, 720) -- XXX best way to set this for mobile?
 	love.window.setTitle("한극어")
 
 	load_fonts()
 
-	quiz_mode = {
-		from = MODE_KOREAN,
-		to = MODE_ENGLISH,
-	}
+	SetQuizMode(MODE_KOREAN, MODE_ENGLISH)
 
-	current_word = random_entry()
-	current_mode = quiz_mode.from
+	current_word = RandomEntry()
+	current_mode = QuizMode.From
 	current_korean_font_index = 1
 
 	show_menu = false
@@ -102,16 +119,16 @@ end
 function love.mousepressed(x, y, button, istouch, npresses)
 	if button == 1 then
 		if is_inside_touch_region(x, y, {love.graphics.getWidth()*2/3, 0, love.graphics.getWidth()/3, love.graphics.getHeight()}) then
-			random_entry()
+			RandomEntry()
 		else
-			current_mode = quiz_mode.to
+			current_mode = QuizMode.To
 		end
 	end
 end
 
 function love.mousereleased(x, y, button, istouch, npresses)
 	if button == 1 then
-		current_mode = quiz_mode.from
+		current_mode = QuizMode.From
 	end
 end
 
@@ -121,11 +138,11 @@ function love.keypressed(key, scancode)
 	end
 
 	if key == "return" then
-		current_word = random_entry()
+		current_word = RandomEntry()
 	end
 
 	if key == "space" then
-		current_mode = quiz_mode.to
+		current_mode = QuizMode.To
 	end
 
 	if key == "tab" then
@@ -148,7 +165,7 @@ end
 
 function love.keyreleased(key, scancode)
 	if key == "space" then
-		current_mode = quiz_mode.from
+		current_mode = QuizMode.From
 	end
 
 	if key == "tab" then
@@ -165,7 +182,8 @@ local function draw_menu()
 
 			love.graphics.setFont(menu_font)
 			love.graphics.setColor(1, 1, 1, 1)
-			love.graphics.print("FONT: "..korean_font_names[current_korean_font_index], 15, 15)
+			love.graphics.print("FONT: "..korean_font_names[current_korean_font_index], 15, menu_font:getHeight())
+			love.graphics.print("SPEED: " ..Options.SpeechSpeed, 15, menu_font:getHeight()*2.5)
 		end)
 	end
 
