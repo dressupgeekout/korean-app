@@ -15,7 +15,7 @@ SPEECH_SLOW = "slow"
 Options = {
 	TextColor = {1, 1, 1, 1},
 	SlowSpeech = false,
-	LevelRange = {{1, 1}, {1, 100}},
+	LevelRange = {{0, 0}, {0, 0}}, -- will be computed later
 }
 
 ---------- ---------- ----------
@@ -48,9 +48,6 @@ local function RandomEntry()
 	local max_level, max_lesson = unpack(Options.LevelRange[2])
 	local min_score = WordScore({level=min_level, lesson=min_lesson})
 	local max_score = WordScore({level=max_level, lesson=max_lesson})
-
-	DebugPrint(serpent.line({min_score, max_score}))
-
 	local score = love.math.random(min_score, max_score)
 
 	--[[If the score does not exist, then try one lower until we get one that
@@ -109,12 +106,12 @@ local function LoadFonts()
 	AddKoreanFont("Nanum Script", "fonts/NanumScript.ttc", 84)
 	AddKoreanFont("PC Myeongjo", "fonts/PCmyoungjo.ttf", 84)
 	AddKoreanFont("Pilgiche", "fonts/Pilgiche.ttf", 84)
-	english_font = love.graphics.newFont(84)
+	english_font = love.graphics.newFont(72)
 	menu_font = love.graphics.newFont(18)
 end
 
 --[[Correctly wraps around the end of the list for you.]]
-local function next_korean_font()
+local function NextKoreanFont()
 	if current_korean_font_index == #korean_font_names then
 		current_korean_font_index = 1
 	else
@@ -123,7 +120,7 @@ local function next_korean_font()
 end
 
 --[[Correctly wraps around the end of the list for you.]]
-local function previous_korean_font()
+local function PreviousKoreanFont()
 	if current_korean_font_index == 1 then
 		current_korean_font_index = #korean_font_names
 	else
@@ -138,6 +135,24 @@ local function SetLevelRange(lower, upper)
 	Options.LevelRange = {lower, upper}
 	local new = Options.LevelRange
 	DebugPrint("LEVEL RANGE %s -> %s", serpent.line(old), serpent.line(new))
+end
+
+--[[Computes what the range should be if you wanted to try out *every* vocab
+word, and returns it.]]
+local function MaximumLevelRange()
+	local min_level = 1
+	local min_lesson = 1
+	local max_level = 1
+	local max_lesson = 1
+
+	for _, entry in ipairs(UnresolvedVocab) do
+		if entry.level < min_level then min_level = entry.level end
+		if entry.lesson < min_lesson then min_lesson = entry.lesson end
+		if entry.level > max_level then max_level = entry.level end
+		if entry.lesson > max_lesson then max_lesson = entry.lesson end
+	end
+
+	return {min_level, min_lesson}, {max_level, max_lesson}
 end
 
 local function SetQuizMode(from, to)
@@ -174,8 +189,8 @@ function love.load()
 
 	LoadFonts()
 
-	--SetQuizMode(MODE_KOREAN, MODE_ENGLISH)
-	SetQuizMode(MODE_ENGLISH, MODE_ROMAJA)
+	SetQuizMode(MODE_KOREAN, MODE_ENGLISH)
+	SetLevelRange(MaximumLevelRange())
 
 	current_word = RandomEntry()
 	current_mode = QuizMode.From
@@ -229,7 +244,7 @@ function love.keypressed(key, scancode)
 	end
 
 	if key == "f" then
-		next_korean_font()
+		NextKoreanFont()
 	end
 
 	if key == "p" then
@@ -266,6 +281,9 @@ local function DrawMenu()
 			love.graphics.setColor(1, 1, 1, 1)
 			love.graphics.print("FONT: "..korean_font_names[current_korean_font_index], 15, menu_font:getHeight())
 			love.graphics.print("SPEED: " ..SpeechSpeed(), 15, menu_font:getHeight()*2.5)
+			local r1 = Options.LevelRange[1]
+			local r2 = Options.LevelRange[2]
+			love.graphics.print(string.format("LEVEL RANGE: %d.%d -> %d.%d", r1[1], r1[2], r2[1], r2[2]), 15,menu_font:getHeight()*4)
 		end)
 	end
 

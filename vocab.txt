@@ -1,9 +1,9 @@
 # vim: ts=8 sts=8 sw=8 noet
 # level, lesson, Korean, romaja, English
 # --------------------------------------------------------------------------
-1	0	한국어			hangugeo		Korean
-1	0	의자			uija			chair
-1	0	진짜			jinjja			real
+-	-	한국어			hangugeo		Korean
+-	-	의자			uija			chair
+-	-	진짜			jinjja			real
 ##
 1	1	안녕하세요		annyeonghaseyo		hello
 1	1	감사합니다		gamsahapnida		thank you
