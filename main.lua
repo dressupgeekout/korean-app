@@ -26,6 +26,14 @@ local function DebugPrint(fmt, ...)
 	end
 end
 
+--[['rect' is a list: {x, y, width, height}]]
+local function IsInsideRect(x, y, rect)
+	local rect_x, rect_y, rect_width, rect_height = unpack(rect)
+	return x >= rect_x and x <= rect_x+rect_width and y >= rect_y and y <= rect_y+rect_height
+end
+
+---------- ---------- ----------
+
 --[[Converts a word into a numerical 'difficulty level'.]]
 local function WordScore(entry)
 	return entry.level*100 + entry.lesson
@@ -64,7 +72,7 @@ end
 
 --[[Returns a LOVE Font object.]]
 local function CurrentKoreanFont()
-	return korean_fonts[korean_font_names[current_korean_font_index]]
+	return korean_fonts[korean_font_names[korean_font_index]]
 end
 
 --[[Force the menu-canvas to be recomputed.]]
@@ -112,19 +120,19 @@ end
 
 --[[Correctly wraps around the end of the list for you.]]
 local function NextKoreanFont()
-	if current_korean_font_index == #korean_font_names then
-		current_korean_font_index = 1
+	if korean_font_index == #korean_font_names then
+		korean_font_index = 1
 	else
-		current_korean_font_index = current_korean_font_index + 1
+		korean_font_index = korean_font_index + 1
 	end
 end
 
 --[[Correctly wraps around the end of the list for you.]]
 local function PreviousKoreanFont()
-	if current_korean_font_index == 1 then
-		current_korean_font_index = #korean_font_names
+	if korean_font_index == 1 then
+		korean_font_index = #korean_font_names
 	else
-		current_korean_font_index = current_korean_font_index - 1
+		korean_font_index = korean_font_index - 1
 	end
 end
 
@@ -180,8 +188,41 @@ local function ToggleSpeechSpeed()
 	ResetMenuCanvas()
 end
 
+local function DrawFontBar()
+	x = 10
+	y = 10
+	for name, font in pairs(korean_fonts) do
+		love.graphics.setFont(font)
+		love.graphics.print("한", x, y)
+		x = x + font:getWidth("한")*1.5
+	end
+end
+
+local function DrawMenu()
+	if not menu_canvas then
+		menu_canvas = love.graphics.newCanvas(love.graphics.getWidth(), love.graphics.getHeight()/2)
+		menu_canvas:renderTo(function()
+			love.graphics.setColor(0.5, 0, 0, 0.75)
+			love.graphics.rectangle("fill", 0, 0, menu_canvas:getWidth(), menu_canvas:getHeight())
+
+			love.graphics.setFont(menu_font)
+			love.graphics.setColor(1, 1, 1, 1)
+			love.graphics.print("FONT: "..korean_font_names[korean_font_index], 15, menu_font:getHeight())
+			love.graphics.print("SPEED: " ..SpeechSpeed(), 15, menu_font:getHeight()*2.5)
+			local r1 = Options.LevelRange[1]
+			local r2 = Options.LevelRange[2]
+			love.graphics.print(string.format("LEVEL RANGE: %d.%d -> %d.%d", r1[1], r1[2], r2[1], r2[2]), 15,menu_font:getHeight()*4)
+		end)
+	end
+
+	love.graphics.draw(menu_canvas, 0, love.graphics.getHeight()/4)
+	DrawFontBar()
+end
+
+---------- ---------- ----------
+
 function love.load()
-	love.window.setMode(1280, 720) -- XXX best way to set this for mobile?
+	love.window.setMode(1280, 720)
 	love.window.setTitle("한극어")
 
 	ResolveVocab()
@@ -194,21 +235,15 @@ function love.load()
 
 	current_word = RandomEntry()
 	current_mode = QuizMode.From
-	current_korean_font_index = 1
+	korean_font_index = 1
 
 	show_menu = false
 	NewWordTouchRegion = {love.graphics.getWidth()*4/5, 0, love.graphics.getWidth()/5, love.graphics.getHeight()}
 end
 
---[['region' is a list: {x, y, width, height}]]
-local function IsInsideTouchRegion(x, y, region)
-	local region_x, region_y, region_width, region_height = unpack(region)
-	return x >= region_x and x <= region_x+region_width and y >= region_y and y <= region_y+region_height
-end
-
 function love.mousepressed(x, y, button, istouch, npresses)
 	if button == 1 then
-		if IsInsideTouchRegion(x, y, NewWordTouchRegion) then
+		if IsInsideRect(x, y, NewWordTouchRegion) then
 			RandomEntry()
 		else
 			current_mode = QuizMode.To
@@ -231,20 +266,27 @@ function love.keypressed(key, scancode)
 		DEBUG = not DEBUG
 	end
 
+	if key == "tab" then
+		show_menu = not show_menu
+	end
+
+	if key == "f" then
+		NextKoreanFont()
+	end
+
+	if key == "s" then
+		ToggleSpeechSpeed()
+	end
+
+	if show_menu then return end
+	--[[None of the following will work while the menu is displayed:]]
+
 	if key == "return" then
 		current_word = RandomEntry()
 	end
 
 	if key == "space" then
 		current_mode = QuizMode.To
-	end
-
-	if key == "tab" then
-		if not show_menu then show_menu = true end
-	end
-
-	if key == "f" then
-		NextKoreanFont()
 	end
 
 	if key == "p" then
@@ -254,40 +296,15 @@ function love.keypressed(key, scancode)
 			love.audio.newSource(path, "static"):play()
 		end
 	end
-
-	if key == "s" then
-		ToggleSpeechSpeed()
-	end
 end
 
 function love.keyreleased(key, scancode)
+	if show_menu then return end
+	--[[None of the following will work while the menu is displayed:]]
+
 	if key == "space" then
 		current_mode = QuizMode.From
 	end
-
-	if key == "tab" then
-		if show_menu then show_menu = false end
-	end
-end
-
-local function DrawMenu()
-	if not menu_canvas then
-		menu_canvas = love.graphics.newCanvas(love.graphics.getWidth(), love.graphics.getHeight()/2)
-		menu_canvas:renderTo(function()
-			love.graphics.setColor(0.5, 0, 0, 0.75)
-			love.graphics.rectangle("fill", 0, 0, menu_canvas:getWidth(), menu_canvas:getHeight())
-
-			love.graphics.setFont(menu_font)
-			love.graphics.setColor(1, 1, 1, 1)
-			love.graphics.print("FONT: "..korean_font_names[current_korean_font_index], 15, menu_font:getHeight())
-			love.graphics.print("SPEED: " ..SpeechSpeed(), 15, menu_font:getHeight()*2.5)
-			local r1 = Options.LevelRange[1]
-			local r2 = Options.LevelRange[2]
-			love.graphics.print(string.format("LEVEL RANGE: %d.%d -> %d.%d", r1[1], r1[2], r2[1], r2[2]), 15,menu_font:getHeight()*4)
-		end)
-	end
-
-	love.graphics.draw(menu_canvas, 0, love.graphics.getHeight()/4)
 end
 
 function love.draw()
