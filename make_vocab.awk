@@ -2,6 +2,7 @@ BEGIN {
   RS = "\n"
   FS = "\t+"
 
+  print "--[[AUTOMATICALLY GENERATED. DO NOT EDIT.]]"
   print "return {"
 }
 

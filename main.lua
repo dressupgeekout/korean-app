@@ -1,9 +1,9 @@
 local serpent = require("serpent")
 local UnresolvedVocab = require("vocab")
 
-VOCAB = {}
-
 DEBUG = true
+
+VOCAB = {}
 
 MODE_KOREAN = "k"
 MODE_ROMAJA = "r"
@@ -13,10 +13,14 @@ SPEECH_FAST = "fast"
 SPEECH_SLOW = "slow"
 
 Options = {
+	TextColor = {1, 1, 1, 1},
 	SlowSpeech = false,
 	LevelRange = {{1, 1}, {1, 100}},
 }
 
+---------- ---------- ----------
+
+--[[Converts a word into a numerical 'difficulty level'.]]
 local function WordScore(entry)
 	return entry.level*100 + entry.lesson
 end
@@ -39,7 +43,7 @@ local function RandomEntry()
 	local min_score = WordScore({level=min_level, lesson=min_lesson})
 	local max_score = WordScore({level=max_level, lesson=max_lesson})
 
-	print(serpent.line({min_score, max_score}))
+	if DEBUG then print(serpent.line({min_score, max_score})) end
 
 	local score = love.math.random(min_score, max_score)
 
@@ -59,7 +63,7 @@ local function RandomEntry()
 end
 
 --[[Returns a LOVE Font object.]]
-local function current_korean_font()
+local function CurrentKoreanFont()
 	return korean_fonts[korean_font_names[current_korean_font_index]]
 end
 
@@ -70,9 +74,9 @@ end
 
 --[[Figures out which font should be used for drawing text based on the current
 mode, and then sets that font.]]
-local function set_font()
+local function SetFont()
 	if current_mode == MODE_KOREAN then
-		current_font = current_korean_font()
+		current_font = CurrentKoreanFont()
 	else
 		current_font = english_font
 	end
@@ -86,7 +90,7 @@ have easy access to their names.]]
 local function AddKoreanFont(name, ...)
 	if not korean_fonts then korean_fonts = {} end
 	if not korean_font_names then korean_font_names = {} end
-	print(string.format("ADDING FONT %q", name))
+	if DEBUG then print(string.format("ADDING FONT %q", name)) end
 	table.insert(korean_font_names, name)
 	korean_fonts[name] = love.graphics.newFont(...)
 end
@@ -124,12 +128,22 @@ local function previous_korean_font()
 	end
 end
 
+--[[Both arguments are ordered pairs, the first entry is the 'level' and the
+second is the 'lesson']]
+local function SetLevelRange(lower, upper)
+	local old = Options.LevelRange
+	Options.LevelRange = {lower, upper}
+	local new = Options.LevelRange
+	if DEBUG then print(string.format("LEVEL RANGE %s -> %s", serpent.line(old), serpent.line(new))) end
+end
+
 local function SetQuizMode(from, to)
 	if from == to then
-		print(string.format("Invalid quiz mode: %q -> %q", from, to))
+		if DEBUG then print(string.format("Invalid quiz mode: %q -> %q", from, to)) end
 		return false
 	end
 	QuizMode = {From=from, To=to}
+	return true
 end
 
 local function SpeechSpeed()
@@ -144,7 +158,8 @@ local function ToggleSpeechSpeed()
 	local old = SpeechSpeed()
 	Options.SlowSpeech = not Options.SlowSpeech
 	local new = SpeechSpeed()
-	print(string.format("SPEECH SPEED %s -> %s", old, new))
+	if DEBUG then print(string.format("SPEECH SPEED %s -> %s", old, new)) end
+	ResetMenuCanvas()
 end
 
 function love.load()
@@ -152,7 +167,7 @@ function love.load()
 	love.window.setTitle("한극어")
 
 	ResolveVocab()
-	print(serpent.line(VOCAB))
+	if DEBUG then print(serpent.line(VOCAB)) end
 
 	load_fonts()
 
@@ -163,17 +178,18 @@ function love.load()
 	current_korean_font_index = 1
 
 	show_menu = false
+	NewWordTouchRegion = {love.graphics.getWidth()*4/5, 0, love.graphics.getWidth()/5, love.graphics.getHeight()}
 end
 
 --[['region' is a list: {x, y, width, height}]]
-local function is_inside_touch_region(x, y, region)
+local function IsInsideTouchRegion(x, y, region)
 	local region_x, region_y, region_width, region_height = unpack(region)
 	return x >= region_x and x <= region_x+region_width and y >= region_y and y <= region_y+region_height
 end
 
 function love.mousepressed(x, y, button, istouch, npresses)
 	if button == 1 then
-		if is_inside_touch_region(x, y, {love.graphics.getWidth()*2/3, 0, love.graphics.getWidth()/3, love.graphics.getHeight()}) then
+		if IsInsideTouchRegion(x, y, NewWordTouchRegion) then
 			RandomEntry()
 		else
 			current_mode = QuizMode.To
@@ -190,6 +206,10 @@ end
 function love.keypressed(key, scancode)
 	if key == "escape" then
 		love.event.quit()
+	end
+
+	if key == "`" then
+		DEBUG = not DEBUG
 	end
 
 	if key == "return" then
@@ -210,9 +230,8 @@ function love.keypressed(key, scancode)
 
 	if key == "p" then
 		local path = "audio/"..(current_word.r).."-"..SpeechSpeed()..".ogg"
-		print(path)
 		if love.filesystem.getInfo(path) then
-			print("PLAYING " .. path)
+			if DEBUG then print("PLAYING " .. path) end
 			love.audio.newSource(path, "static"):play()
 		end
 	end
@@ -250,14 +269,21 @@ local function DrawMenu()
 end
 
 function love.draw()
-	set_font()
-	love.graphics.setColor(1, 1, 1, 1)
+	SetFont()
+
+	love.graphics.setColor(unpack(Options.TextColor))
+
 	love.graphics.printf(
 		current_word[current_mode],
 		0, love.graphics.getHeight()/2-current_font:getHeight()/2,
 		love.graphics.getWidth(),
 		"center"
 	)
+
+	if DEBUG then
+		love.graphics.setColor(0, 0.5, 0, 0.5)
+		love.graphics.rectangle("fill", unpack(NewWordTouchRegion))
+	end
 
 	if show_menu then
 		DrawMenu()
