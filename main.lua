@@ -20,6 +20,12 @@ Options = {
 
 ---------- ---------- ----------
 
+local function DebugPrint(fmt, ...)
+	if DEBUG then
+		print(string.format(fmt, ...))
+	end
+end
+
 --[[Converts a word into a numerical 'difficulty level'.]]
 local function WordScore(entry)
 	return entry.level*100 + entry.lesson
@@ -43,7 +49,7 @@ local function RandomEntry()
 	local min_score = WordScore({level=min_level, lesson=min_lesson})
 	local max_score = WordScore({level=max_level, lesson=max_lesson})
 
-	if DEBUG then print(serpent.line({min_score, max_score})) end
+	DebugPrint(serpent.line({min_score, max_score}))
 
 	local score = love.math.random(min_score, max_score)
 
@@ -54,10 +60,7 @@ local function RandomEntry()
 	end
 
 	local word = VOCAB[score][love.math.random(#VOCAB[score])]
-
-	if DEBUG then
-		print("->", word.k, word.r, word.e)
-	end
+	DebugPrint("-> %s\t%s\t%s", word.k, word.r, word.e)
 
 	return word
 end
@@ -90,12 +93,12 @@ have easy access to their names.]]
 local function AddKoreanFont(name, ...)
 	if not korean_fonts then korean_fonts = {} end
 	if not korean_font_names then korean_font_names = {} end
-	if DEBUG then print(string.format("ADDING FONT %q", name)) end
+	DebugPrint("ADDING FONT %q", name)
 	table.insert(korean_font_names, name)
 	korean_fonts[name] = love.graphics.newFont(...)
 end
 
-local function load_fonts()
+local function LoadFonts()
 	AddKoreanFont("Apple Gothic", "fonts/AppleGothic.ttf", 84)
 	AddKoreanFont("Apple Myungjo", "fonts/AppleMyungjo.ttf", 84)
 	AddKoreanFont("Apple SD Gothic Neo", "fonts/AppleSDGothicNeo.ttc", 84)
@@ -134,12 +137,12 @@ local function SetLevelRange(lower, upper)
 	local old = Options.LevelRange
 	Options.LevelRange = {lower, upper}
 	local new = Options.LevelRange
-	if DEBUG then print(string.format("LEVEL RANGE %s -> %s", serpent.line(old), serpent.line(new))) end
+	DebugPrint("LEVEL RANGE %s -> %s", serpent.line(old), serpent.line(new))
 end
 
 local function SetQuizMode(from, to)
 	if from == to then
-		if DEBUG then print(string.format("Invalid quiz mode: %q -> %q", from, to)) end
+		DebugPrint("Invalid quiz mode: %q -> %q", from, to)
 		return false
 	end
 	QuizMode = {From=from, To=to}
@@ -158,7 +161,7 @@ local function ToggleSpeechSpeed()
 	local old = SpeechSpeed()
 	Options.SlowSpeech = not Options.SlowSpeech
 	local new = SpeechSpeed()
-	if DEBUG then print(string.format("SPEECH SPEED %s -> %s", old, new)) end
+	DebugPrint("SPEECH SPEED %s -> %s", old, new)
 	ResetMenuCanvas()
 end
 
@@ -167,11 +170,12 @@ function love.load()
 	love.window.setTitle("한극어")
 
 	ResolveVocab()
-	if DEBUG then print(serpent.line(VOCAB)) end
+	DebugPrint(serpent.line(VOCAB))
 
-	load_fonts()
+	LoadFonts()
 
-	SetQuizMode(MODE_KOREAN, MODE_ENGLISH)
+	--SetQuizMode(MODE_KOREAN, MODE_ENGLISH)
+	SetQuizMode(MODE_ENGLISH, MODE_ROMAJA)
 
 	current_word = RandomEntry()
 	current_mode = QuizMode.From
@@ -231,7 +235,7 @@ function love.keypressed(key, scancode)
 	if key == "p" then
 		local path = "audio/"..(current_word.r).."-"..SpeechSpeed()..".ogg"
 		if love.filesystem.getInfo(path) then
-			if DEBUG then print("PLAYING " .. path) end
+			DebugPrint("PLAYING %s", path)
 			love.audio.newSource(path, "static"):play()
 		end
 	end
