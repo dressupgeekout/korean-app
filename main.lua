@@ -12,6 +12,9 @@ MODE_ENGLISH = "e"
 SPEECH_FAST = "fast"
 SPEECH_SLOW = "slow"
 
+KOREAN_WORD_DISPLAY_SIZE = 84
+KOREAN_FONT_SELECTOR_SIZE = 48
+
 Options = {
 	TextColor = {1, 1, 1, 1},
 	SlowSpeech = false,
@@ -92,47 +95,73 @@ local function SetFont()
 	ResetMenuCanvas()
 end
 
---[[Updates two tables: a lookup table from fontname->font, but also a plain
-list of font names. This allows us to step through the list of fonts and also
-have easy access to their names.]]
-local function AddKoreanFont(name, ...)
+--[[Updates several tables: a lookup table from fontname->font, but also a
+plain list of font names. This allows us to step through the list of fonts and
+also have easy access to their names. And then we also maintain a list of smaller
+fonts for the "font selector" widget.]]
+local function AddKoreanFont(name, path)
 	if not korean_fonts then korean_fonts = {} end
 	if not korean_font_names then korean_font_names = {} end
+	if not korean_fontselectors then korean_fontselectors = {} end
 	DebugPrint("ADDING FONT %q", name)
 	table.insert(korean_font_names, name)
-	korean_fonts[name] = love.graphics.newFont(...)
+	korean_fonts[name] = love.graphics.newFont(path, KOREAN_WORD_DISPLAY_SIZE)
+	table.insert(korean_fontselectors, {Font=love.graphics.newFont(path, KOREAN_FONT_SELECTOR_SIZE), Current=false})
 end
 
 local function LoadFonts()
-	AddKoreanFont("Apple Gothic", "fonts/AppleGothic.ttf", 84)
-	AddKoreanFont("Apple Myungjo", "fonts/AppleMyungjo.ttf", 84)
-	AddKoreanFont("Apple SD Gothic Neo", "fonts/AppleSDGothicNeo.ttc", 84)
-	AddKoreanFont("Gunseouche", "fonts/Gungseouche.ttf", 84)
-	AddKoreanFont("Headline A", "fonts/HeadlineA.ttf", 84)
-	AddKoreanFont("Nanum Gothic", "fonts/NanumGothic.ttc", 84)
-	AddKoreanFont("Nanum Myeongjo", "fonts/NanumMyeongjo.ttc", 84)
-	AddKoreanFont("Nanum Script", "fonts/NanumScript.ttc", 84)
-	AddKoreanFont("PC Myeongjo", "fonts/PCmyoungjo.ttf", 84)
-	AddKoreanFont("Pilgiche", "fonts/Pilgiche.ttf", 84)
+	AddKoreanFont("Apple Gothic", "fonts/AppleGothic.ttf")
+	AddKoreanFont("Apple Myungjo", "fonts/AppleMyungjo.ttf")
+	AddKoreanFont("Apple SD Gothic Neo", "fonts/AppleSDGothicNeo.ttc")
+	AddKoreanFont("Gunseouche", "fonts/Gungseouche.ttf")
+	AddKoreanFont("Headline A", "fonts/HeadlineA.ttf")
+	AddKoreanFont("Nanum Gothic", "fonts/NanumGothic.ttc")
+	AddKoreanFont("Nanum Myeongjo", "fonts/NanumMyeongjo.ttc")
+	AddKoreanFont("Nanum Script", "fonts/NanumScript.ttc")
+	AddKoreanFont("PC Myeongjo", "fonts/PCmyoungjo.ttf")
+	AddKoreanFont("Pilgiche", "fonts/Pilgiche.ttf")
 	english_font = love.graphics.newFont(72)
 	menu_font = love.graphics.newFont(18)
 end
 
+--[[Sets the current Korean font index, and also updates the fontselect widget
+so we know how graphically convey which font is now the current one.]]
+local function SetKoreanFontIndex(index)
+	korean_font_index = index
+
+	for i, fontinfo in ipairs(korean_fontselectors) do
+		if i == index then
+			fontinfo.Current = true
+		else
+			fontinfo.Current = false
+		end
+	end
+end
+
+local function IncrKoreanFontIndex()
+	SetKoreanFontIndex(korean_font_index + 1)
+end
+
+local function DecrKoreanFontIndex()
+	SetKoreanFontIndex(korean_font_index - 1)
+end
+
+
 --[[Correctly wraps around the end of the list for you.]]
 local function NextKoreanFont()
 	if korean_font_index == #korean_font_names then
-		korean_font_index = 1
+		SetKoreanFontIndex(1)
 	else
-		korean_font_index = korean_font_index + 1
+		IncrKoreanFontIndex()
 	end
 end
 
 --[[Correctly wraps around the end of the list for you.]]
 local function PreviousKoreanFont()
 	if korean_font_index == 1 then
-		korean_font_index = #korean_font_names
+		SetKoreanFontIndex(#korean_font_names)
 	else
-		korean_font_index = korean_font_index - 1
+		DecrKoreanFontIndex()
 	end
 end
 
@@ -191,10 +220,16 @@ end
 local function DrawFontBar()
 	x = 10
 	y = 10
-	for name, font in pairs(korean_fonts) do
-		love.graphics.setFont(font)
+	for i, fontselector in ipairs(korean_fontselectors) do
+		if fontselector.Current then
+			love.graphics.setColor(1, 1, 0, 1)
+			love.graphics.setLineWidth(1)
+			love.graphics.rectangle("line", x-5, y-5, fontselector.Font:getWidth("한")*1.25, fontselector.Font:getHeight()*1.25)
+		end
+		love.graphics.setColor(1, 1, 1, 1)
+		love.graphics.setFont(fontselector.Font)
 		love.graphics.print("한", x, y)
-		x = x + font:getWidth("한")*1.5
+		x = x + fontselector.Font:getWidth("한")*1.5
 	end
 end
 
@@ -219,6 +254,14 @@ local function DrawMenu()
 	DrawFontBar()
 end
 
+local function PlayCurrentWordSound()
+	local path = "audio/"..(current_word.r).."-"..SpeechSpeed()..".ogg"
+	if love.filesystem.getInfo(path) then
+		DebugPrint("PLAYING %s", path)
+		love.audio.newSource(path, "static"):play()
+	end
+end
+
 ---------- ---------- ----------
 
 function love.load()
@@ -235,7 +278,7 @@ function love.load()
 
 	current_word = RandomEntry()
 	current_mode = QuizMode.From
-	korean_font_index = 1
+	SetKoreanFontIndex(1)
 
 	show_menu = false
 	NewWordTouchRegion = {love.graphics.getWidth()*4/5, 0, love.graphics.getWidth()/5, love.graphics.getHeight()}
@@ -290,11 +333,7 @@ function love.keypressed(key, scancode)
 	end
 
 	if key == "p" then
-		local path = "audio/"..(current_word.r).."-"..SpeechSpeed()..".ogg"
-		if love.filesystem.getInfo(path) then
-			DebugPrint("PLAYING %s", path)
-			love.audio.newSource(path, "static"):play()
-		end
+		PlayCurrentWordSound()
 	end
 end
 
