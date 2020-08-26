@@ -124,8 +124,9 @@ local function LoadFonts()
 	menu_font = love.graphics.newFont(18)
 end
 
---[[Sets the current Korean font index, and also updates the fontselect widget
-so we know how graphically convey which font is now the current one.]]
+--[[Sets the current Korean font index, and also updates the fontselect
+widget so we know how to graphically convey which font is now the current
+one.]]
 local function SetKoreanFontIndex(index)
 	korean_font_index = index
 
@@ -286,8 +287,11 @@ end
 
 function love.mousepressed(x, y, button, istouch, npresses)
 	if button == 1 then
+		if show_menu then return end
+		--[[None of the following will work while the menu is displayed:]]
+
 		if IsInsideRect(x, y, NewWordTouchRegion) then
-			RandomEntry()
+			current_word = RandomEntry()
 		else
 			current_mode = QuizMode.To
 		end
@@ -314,7 +318,11 @@ function love.keypressed(key, scancode)
 	end
 
 	if key == "f" then
-		NextKoreanFont()
+		if love.keyboard.isDown("lshift", "rshift") then
+			PreviousKoreanFont()
+		else
+			NextKoreanFont()
+		end
 	end
 
 	if key == "s" then
