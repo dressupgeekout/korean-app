@@ -178,10 +178,10 @@ end
 --[[Computes what the range should be if you wanted to try out *every* vocab
 word, and returns it.]]
 local function MaximumLevelRange()
-	local min_level = 1
+	local min_level = 0
 	local min_lesson = 1
-	local max_level = 1
-	local max_lesson = 1
+	local max_level = 99
+	local max_lesson = 99
 
 	for _, entry in ipairs(UnresolvedVocab) do
 		if entry.level < min_level then min_level = entry.level end
@@ -275,7 +275,8 @@ function love.load()
 	LoadFonts()
 
 	SetQuizMode(MODE_KOREAN, MODE_ENGLISH)
-	SetLevelRange(MaximumLevelRange())
+	--SetLevelRange(MaximumLevelRange()) -- XXX CHARLOTTE
+	SetLevelRange({0,1}, {0,2})
 
 	current_word = RandomEntry()
 	current_mode = QuizMode.From

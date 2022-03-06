@@ -1,6 +1,29 @@
-# vim: ts=8 sts=8 sw=8 noet
+# vim: ts=8 sts=8 sw=8 tw=0 noet
 # level, lesson, Korean, romaja, English
+# "Level 0" corresponds to "My First 500 Korean Words"
 # --------------------------------------------------------------------------
+0	1	나			na			I, me
+0	1	회사원			hoesawon		employee
+0	1	너무			neomu			too, very
+0	1	바쁘다			bappeuda		to be busy
+0	1	우리			uri			we, our
+0	1	보통			botong			usual, regular
+0	1	주말			jumal			weekend
+0	1	만나다			mannada			to meet
+0	1	영화			yeonghwa		movie
+0	1	카페			kape			cafe
+##
+0	2	마일			maeil			every day
+0	2	일찍			iljjik			early
+0	2	일어나다		ireonada		to wake up
+0	2	물			mul			water
+0	2	마시다			masida			to drink
+0	2	세수			sesu			washing one's face
+0	2	옷			ot			clothes
+0	2	입다			ipda			to wear, to put on
+0	2	화장			hwajang			makeup
+0	2	회사			hoesa			company
+##
 -	-	한국어			hangugeo		Korean
 -	-	의자			uija			chair
 -	-	진짜			jinjja			real
